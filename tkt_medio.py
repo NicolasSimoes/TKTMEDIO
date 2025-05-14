@@ -51,9 +51,14 @@ def create_map(df):
                 location=[row['LATITUDE'], row['LONGITUDE']],
                 icon=icon,
                 tooltip=(
-                    f"Fantasia: {row['FANTASIA']}\n"
-                    f"Supervisor: {row['SUPERVISOR']}\n"
-                    f"Faixa: {row['FAIXA']}"
+                     f"Codigo: {row['CNPJ']}<br>"
+                    f"Fantasia: {row['FANTASIA']}<br>"
+                    f"Supervisor: {row['SUPERVISOR']}<br>"
+                    f"Faixa: {row['FAIXA']}<br>"
+                    f"Sem comprar?: {row['SEM COMPRAR?']}<br>"
+                    f"Ticket Medio: {row['TKT MED']}<br>"
+                    f"Lucro: {row['LUCRO MEDIO']}<br>"
+                     
                 )
             ).add_to(fg)
         fg.add_to(m)
