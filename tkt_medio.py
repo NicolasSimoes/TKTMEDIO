@@ -34,7 +34,7 @@ def color_by_faixa(faixa):
 def create_map(df):
     first = df.iloc[0]
     center = [first['LATITUDE'], first['LONGITUDE']]
-    m = folium.Map(location=center, zoom_start=12)
+    m = folium.Map(location=center, zoom_start=8)
 
     # Plota todos os pontos agrupados por supervisor com ícone de carrinho
     for supervisor, grp in df.groupby('SUPERVISOR'):
@@ -54,10 +54,11 @@ def create_map(df):
                      f"Codigo: {row['CNPJ']}<br>"
                     f"Fantasia: {row['FANTASIA']}<br>"
                     f"Supervisor: {row['SUPERVISOR']}<br>"
+                      f"Venderdor: {row['VENDEDOR']}<br>"
                     f"Faixa: {row['FAIXA']}<br>"
                     f"Sem comprar?: {row['SEM COMPRAR?']}<br>"
                     f"Ticket Medio: {row['TKT MED']}<br>"
-                    f"Lucro: {row['LUCRO MEDIO']}<br>"
+                    f"Lucro medio: {row['LUCRO MEDIO']}<br>"
                      
                 )
             ).add_to(fg)
