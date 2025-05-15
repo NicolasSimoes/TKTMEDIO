@@ -28,7 +28,7 @@ df = df.dropna(subset=['LATITUDE', 'LONGITUDE'])
 # Cor por FAIXA
 def color_by_faixa(faixa):
     f = str(faixa).strip().upper()
-    return 'green' if any(k in f for k in ['MÁXIMO', 'MAXIMO', 'REGULAR']) else 'red'
+    return 'green' if any(k in f for k in ['MÁXIMO', 'MAXIMO', 'REGULAR', 'ACIMA']) else 'red'
 
 # Cria mapa usando o primeiro ponto como centro (sem cálculo de média)
 def create_map(df):
