@@ -66,8 +66,20 @@ def create_map(df):
 
     folium.LayerControl(collapsed=False).add_to(m)
     return m
+legend = folium.Element(
+    '<div style="position:fixed;bottom:50px;left:50px;width:300px;'
+    'background:white;border:2px solid grey;z-index:9999;padding:10px;'
+    'box-shadow:2px 2px 5px rgba(0,0,0,0.3)">' +
+    f'<b> 🛑 Clientes com tkt médio abaixo de R$150,00</b><br>' +
+    f'<b> 🟢 Clientes com tkt médio acima de R$150,00:</b><br>' +
+    '</div>'   
+)
 
-# Gera e salva mapa
+# Gera o mapa
 mapa = create_map(df)
+
+# Adiciona a legenda ao HTML do mapa
+mapa.get_root().html.add_child(legend)
+
 mapa.save('mapa_tudo_com_carrinho.html')
 print('Mapa salvo em mapa_tudo_com_carrinho.html')
