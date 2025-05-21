@@ -76,6 +76,8 @@ def create_map(df):
                 f"Fantasia: {row.get('FANTASIA', '')}<br>"
                 f"Supervisor: {row.get('SUPERVISOR', '')}<br>"
                 f"Vendedor: {row.get('VENDEDOR', '')}<br>"
+                f"Rota: {row.get('ROTA', '')}<br>"
+                f"Forma de pagamento: {row.get('FORMA DE PAGAMENTO', '')}<br>"
                 f"Faixa: {row.get('FAIXA', '')}<br>"
                 f"Sem comprar?: {row.get('SEM COMPRAR?', '')}<br>"
                 f"Ticket Medio: {'R$ {:.2f}'.format(row['TKT MED']) if pd.notna(row['TKT MED']) else '-'}<br>"
