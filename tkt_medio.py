@@ -1,6 +1,7 @@
 import pandas as pd
 import folium
 import csv
+from folium.plugins import HeatMap
 
 # Detecta delimitador com sniff, fallback para ';'
 with open('mapatktmedio.csv', encoding='utf-8-sig') as f:
@@ -41,6 +42,19 @@ if 'LUCRO MEDIO' in df.columns:
     )
     df['LUCRO MEDIO'] = pd.to_numeric(df['LUCRO MEDIO'], errors='coerce').fillna(0)
 
+# Converte coluna % MARGEM CONTRIBUIÇÃO para float e define peso fixo para HeatMap
+if '% MARGEM CONTRIBUIÇÃO' in df.columns:
+    df['% MARGEM CONTRIBUIÇÃO'] = (
+        df['% MARGEM CONTRIBUIÇÃO'].astype(str)
+                                   .str.replace(r'[^0-9,.-]', '', regex=True)
+                                   .str.replace(',', '.', regex=False)
+    )
+    df['% MARGEM CONTRIBUIÇÃO'] = pd.to_numeric(df['% MARGEM CONTRIBUIÇÃO'], errors='coerce')
+    # Peso fixo: abaixo de 25% => 10000, acima ou igual => 10
+    df['heat_weight'] = df['% MARGEM CONTRIBUIÇÃO'].apply(lambda x: 100 if pd.notna(x) and x < 25 else (10 if pd.notna(x) else 0))
+else:
+    df['heat_weight'] = 0
+
 # Remove linhas sem coordenadas
 df = df.dropna(subset=['LATITUDE', 'LONGITUDE'])
 
@@ -49,13 +63,10 @@ df = df.dropna(subset=['LATITUDE', 'LONGITUDE'])
 # 2) ticket médio zero -> cinza
 # 3) Faixa máxima/acima -> verde; demais -> vermelho
 def color_by_rules(faixa, tkt_med, sem_comprar):
-    # Regra 1: negociação
     if isinstance(sem_comprar, str) and sem_comprar.strip().upper() == 'NEGOCIACAO':
         return 'orange'
-    # Regra 2: tkt médio zero
     if pd.notna(tkt_med) and tkt_med == 0:
         return 'gray'
-    # Regra 3: faixa
     f = str(faixa).strip().upper()
     if any(k in f for k in ['MÁXIMO', 'MAXIMO', 'REGULAR', 'ACIMA']):
         return 'green'
@@ -64,15 +75,35 @@ def color_by_rules(faixa, tkt_med, sem_comprar):
 # Cria mapa usando o primeiro ponto como centro
 def create_map(df):
     center = [df.iloc[0]['LATITUDE'], df.iloc[0]['LONGITUDE']]
-    m = folium.Map(location=center, zoom_start=8)
+    m = folium.Map(location=center, zoom_start=12)
 
+    # Adiciona HeatMap de % MARGEM CONTRIBUIÇÃO
+    heat_data = df[['LATITUDE', 'LONGITUDE', 'heat_weight']].values.tolist()
+    HeatMap(
+             heat_data,
+        name='Heatmap Margem Contribuição',
+        min_opacity=0.8,
+        radius=20,
+        blur=20,
+        max_zoom=18,
+        max_val=100,
+        use_local_extrema=False,
+        gradient={
+            '0.0': 'blue',
+            '0.5': 'lime',
+            '0.8': 'orange',
+            '1.0': 'red'
+        }
+    ).add_to(m)
+
+    # Adiciona marcadores por supervisor
     for supervisor, grp in df.groupby('SUPERVISOR'):
         fg = folium.FeatureGroup(name=supervisor, show=False)
         for _, row in grp.iterrows():
             cor = color_by_rules(row.get('FAIXA'), row.get('TKT MED'), row.get('SEM COMPRAR?'))
             icon = folium.Icon(icon='shopping-cart', prefix='fa', color=cor)
             tooltip = (
-                f"Codigo: {row.get('CNPJ', '')}<br>"
+                f"Codigo2: {row.get('CNPJ', '')}<br>"
                 f"Fantasia: {row.get('FANTASIA', '')}<br>"
                 f"Supervisor: {row.get('SUPERVISOR', '')}<br>"
                 f"Vendedor: {row.get('VENDEDOR', '')}<br>"
@@ -82,6 +113,7 @@ def create_map(df):
                 f"Sem comprar?: {row.get('SEM COMPRAR?', '')}<br>"
                 f"Ticket Medio: {'R$ {:.2f}'.format(row['TKT MED']) if pd.notna(row['TKT MED']) else '-'}<br>"
                 f"Lucro medio: R$ {row['LUCRO MEDIO']:.2f}<br>"
+                f"Margem Contr.: {'{:.2f}%'.format(row['% MARGEM CONTRIBUIÇÃO']) if pd.notna(row['% MARGEM CONTRIBUIÇÃO']) else '-'}<br>"
             )
             folium.Marker(location=[row['LATITUDE'], row['LONGITUDE']], icon=icon, tooltip=tooltip).add_to(fg)
         fg.add_to(m)
@@ -95,17 +127,16 @@ legend = folium.Element(
     'background:white;border:2px solid grey;z-index:9999;padding:10px;'
     'box-shadow:2px 2px 5px rgba(0,0,0,0.3)">' +
     '<b>Regras de cores:</b><br>' +
-    '<b>🛑 Clientes com tkt médio abaixo de R$150,00</b><br>' +
-    '<b>🟢Clientes com tkt médio acima de R$150,00</b><br>' +
+    '<b>🛑 Clientes com TKT MEDio abaixo de R$150,00</b><br>' +
+    '<b>🟢Clientes com TKT MEDio acima de R$150,00</b><br>' +
     '<b>🟠 Clientes em negociação</b><br>' +
     '<b>⚫ Clientes que estão sem comprar há 90 dias</b><br>' +
-    
-   
+    '<b>🌡️ Heatmap: peso fixo - &lt;25% => 10000, >=25% => 10</b><br>' +
     '</div>'
 )
 
 # Gera e salva mapa
 mapa = create_map(df)
 mapa.get_root().html.add_child(legend)
-mapa.save('mapa_tudo_com_carrinho.html')
+mapa.save('mapa_tudo_com_carrinho_heatmap.html')
 print('Mapa salvo em mapa_tudo_com_carrinho.html')
