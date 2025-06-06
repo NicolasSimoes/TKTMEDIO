@@ -51,7 +51,9 @@ if '% MARGEM CONTRIBUIÇÃO' in df.columns:
     )
     df['% MARGEM CONTRIBUIÇÃO'] = pd.to_numeric(df['% MARGEM CONTRIBUIÇÃO'], errors='coerce')
     # Peso fixo: abaixo de 25% => 10000, acima ou igual => 10
-    df['heat_weight'] = df['% MARGEM CONTRIBUIÇÃO'].apply(lambda x: 100 if pd.notna(x) and x < 25 else (10 if pd.notna(x) else 0))
+    df['heat_weight'] = df['% MARGEM CONTRIBUIÇÃO'].apply(lambda x: 1000 
+                                                          if pd.notna(x) and x < 25 
+                                                          else (10 if pd.notna(x) else 0))
 else:
     df['heat_weight'] = 0
 
@@ -63,9 +65,9 @@ df = df.dropna(subset=['LATITUDE', 'LONGITUDE'])
 # 2) ticket médio zero -> cinza
 # 3) Faixa máxima/acima -> verde; demais -> vermelho
 def color_by_rules(faixa, tkt_med, sem_comprar):
-    if isinstance(sem_comprar, str) and sem_comprar.strip().upper() == 'NEGOCIACAO':
+    if isinstance(sem_comprar, str) and sem_comprar.strip().upper() == 'NEGOCIAÇÃO':
         return 'orange'
-    if pd.notna(tkt_med) and tkt_med == 0:
+    if isinstance(sem_comprar, str) and sem_comprar.strip().upper() == 'SIM':
         return 'gray'
     f = str(faixa).strip().upper()
     if any(k in f for k in ['MÁXIMO', 'MAXIMO', 'REGULAR', 'ACIMA']):
@@ -86,8 +88,9 @@ def create_map(df):
         radius=20,
         blur=20,
         max_zoom=18,
-        max_val=100,
-        use_local_extrema=False,
+        max_val=1000,
+        use_local_extrema=True,
+        scale_radius=True,
         gradient={
             '0.0': 'blue',
             '0.5': 'lime',
@@ -127,11 +130,12 @@ legend = folium.Element(
     'background:white;border:2px solid grey;z-index:9999;padding:10px;'
     'box-shadow:2px 2px 5px rgba(0,0,0,0.3)">' +
     '<b>Regras de cores:</b><br>' +
-    '<b>🛑 Clientes com TKT MEDio abaixo de R$150,00</b><br>' +
+    '<b>🛑 Clientes com TKT MEDIO abaixo de R$150,00</b><br>' +
     '<b>🟢Clientes com TKT MEDio acima de R$150,00</b><br>' +
     '<b>🟠 Clientes em negociação</b><br>' +
     '<b>⚫ Clientes que estão sem comprar há 90 dias</b><br>' +
-    '<b>🌡️ Heatmap: peso fixo - &lt;25% => 10000, >=25% => 10</b><br>' +
+    '<b>🔥 Calor = Margem de contribuição < 25% </b><br>' +
+    '<b> ❄ Frio = Margem de contribuição > 25% </b><br>' +
     '</div>'
 )
 
